@@ -84,85 +84,6 @@ int main(int argc, char *argv[])
 
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
-
-	if ((rv = getaddrinfo(argv[1], PORT, &hints, &serverInfo)) != 0) {
-		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
-		return 1;
-	}
-
-	for(clientInfo = serverInfo; clientInfo != NULL; clientInfo = clientInfo->ai_next) {
-		if ((sockfd = socket(clientInfo->ai_family, clientInfo->ai_socktype, clientInfo->ai_protocol)) == -1) {
-			perror("client: socket");
-			continue;
-		}
-		
-		if (connect(sockfd, clientInfo->ai_addr, clientInfo->ai_addrlen) == -1) {
-			close(sockfd);
-			perror("client: connect");
-			continue;
-		}
-
-		break;
-	}
-
-	freeaddrinfo(serverInfo); // all done with this structure
-
-	printf("-------Sending TCP-------\n");
-
-	for(;sequenceNumber < numPackets;sequenceNumber++){
-		//printf("sequenceNumber: %ld, length: %d\n", sequenceNumber, sizeof(long));
-		if(sequenceNumber == 1){ //first transmission, record time
-			clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &transmissionStartTime);
-			sendTime.tv_sec = transmissionStartTime.tv_sec;
-			sendTime.tv_nsec = transmissionStartTime.tv_nsec;
-		}
-		else{
-			clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &sendTime);
-		}
-		n = send(sockfd,(char *) &sequenceNumber, sizeof(long),0);
-
-		if((numBytes = recv(sockfd, (char *)&retPacket, sizeof(retPacket),0)) == -1){
-			perror("recv");
-			exit(1);
-		}
-		if(sequenceNumber == (numPackets - 1)){ //last transmission, record time
-			clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &transmissionEndTime);
-			totalTime = diff(sendTime, transmissionEndTime);
-			if(csv){
-				printf("%ld, %ld\n", retPacket, totalTime.tv_sec*1000000000 + totalTime.tv_nsec);
-			}
-			else{
-				printf("Transmission time: %ld\n", totalTime.tv_sec*1000000000 + totalTime.tv_nsec);
-			}
-			totalTime = diff(transmissionStartTime, transmissionEndTime);
-			if(csv){
-				printf("TCP total, %ld\n", totalTime.tv_sec*1000000000 + totalTime.tv_nsec);
-			}
-			else{
-				printf("Total TCP transmission time: %ld\n", totalTime.tv_sec*1000000000 + totalTime.tv_nsec);
-			}
-			
-		}
-		else{
-			clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &returnTime);
-			totalTime = diff(sendTime, returnTime);
-			if(csv){
-				printf("%ld, %ld\n", retPacket, totalTime.tv_sec*1000000000 + totalTime.tv_nsec);
-			}
-			else{
-				printf("Transmission time: %ld\n", totalTime.tv_sec*1000000000 + totalTime.tv_nsec);
-			}
-		}
-
-		checkTransmissionErrors(sequenceNumber, retPacket, serial, &errors);
-		//printf("Received this message: %ld\n",retPacket);	
-	}
-	//printf("for loop ended\n");	
-	close(sockfd);
-
-	memset(&hints, 0, sizeof hints);
-	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
 
 	if ((rv = getaddrinfo(argv[1], UDPPORT, &hints, &serverInfo2)) != 0) {
@@ -208,9 +129,9 @@ int main(int argc, char *argv[])
 			clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &sendTime);
 		}
 		
-		//printf("sending:%ld\n", sequenceNumber);
+		printf("sending:%ld\n", sequenceNumber);
 		numBytes = sendto(sockUDP, (char *)&sequenceNumber, sizeof(long), 0, clientInfo->ai_addr, clientInfo->ai_addrlen);
-		//printf("sent %d bytes\n", numBytes);
+		printf("sent %d bytes\n", numBytes);
 		//numBytes = recvfrom(sockUDP, (char *)&retPacket, sizeof(long), 0, clientInfo->ai_addr, &clientInfo->ai_addrlen);
 		//printf("rcvd %d bytes, msg: %ld\n", numBytes,retPacket);
 		if(readable_timeout(sockUDP,5) == 0){
@@ -218,7 +139,7 @@ int main(int argc, char *argv[])
 		}
 		else{
 			numBytes = recvfrom(sockUDP, (char *)&retPacket, sizeof(long), 0, clientInfo->ai_addr, &clientInfo->ai_addrlen);
-			//printf("rcvd %d bytes, msg: %ld\n", numBytes,retPacket);
+			printf("rcvd %d bytes, msg: %ld\n", numBytes,retPacket);
 			if(sequenceNumber == (numPackets - 1)){ //last transmission, record time
 				clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &transmissionEndTime);
 				totalTime = diff(sendTime, transmissionEndTime);

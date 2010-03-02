@@ -43,7 +43,7 @@ int main(void){
 	printf("Serial # %ld...\n", serial);
 
 	// Set up TCP listening socket
-	memset(&hints, 0, sizeof(hints));
+	/*memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;     // IP4/6 agnostic
     hints.ai_socktype = SOCK_STREAM; //TCP
 	hints.ai_flags = AI_PASSIVE;     // fill in my IP for me
@@ -67,7 +67,7 @@ int main(void){
 	if(listen(socketFileDescriptor, 5) == -1){
 		//error on listen
 		printf("error on listen\n");
-	}
+	}*/
 
 	// Set up UDP socket
 	memset(&hintsUDP, 0, sizeof(hintsUDP));
@@ -99,21 +99,25 @@ int main(void){
 	// Set up select
 	fd_set tmprs;
 	FD_ZERO(&rset);
-	FD_SET(socketFileDescriptor, &rset);
+	//FD_SET(socketFileDescriptor, &rset);
 	FD_SET(sockUDP, &rset);		
 	tmprs = rset;
-	maxfdp1 = max(socketFileDescriptor, sockUDP) + 1;
+	//maxfdp1 = max(socketFileDescriptor, sockUDP) + 1;
+	maxfdp1 = sockUDP + 1;
 	
 	while(1){
 		//timeout.tv_sec = 30;
 		//timeout.tv_usec = 0;
-		rset = tmprs;
+		//rset = tmprs;
+		FD_ZERO(&rset);
+		FD_SET(sockUDP, &rset);	
+		printf("before select\n");
 		if(select(maxfdp1, &rset, NULL, NULL, NULL) == -1){
 			//error on select
 			printf("error on select\n");
 		}
 		printf("select called\n");
-		if(FD_ISSET(socketFileDescriptor, &rset)){// TCP is ready to read
+		/*if(FD_ISSET(socketFileDescriptor, &rset)){// TCP is ready to read
 			connectionFileDescriptor = accept(socketFileDescriptor, (struct sockaddr *)&client_addr, &addr_size);
 			if(connectionFileDescriptor == -1){				
 				//error on accept
@@ -136,7 +140,7 @@ int main(void){
 			}
 			cout << "Exiting second infinite loop"<<endl;
 		}
-		else if(FD_ISSET(sockUDP, &rset)){ //receive UDP
+		else*/ if(FD_ISSET(sockUDP, &rset)){ //receive UDP
 			printf("receiving UDP\n");
 		
 			if((n = recvfrom(sockUDP, (char *)&recvPacket, sizeof(long), 0, (struct sockaddr *)&their_addr, &udpClilen)) == -1){
