@@ -62,6 +62,7 @@ int main(void){
 	 if (bind(sockUDP, resUDP->ai_addr, resUDP->ai_addrlen) == -1) {
         close(sockUDP);
         perror("listener: bind");
+		printf("error on bind\n");
     }
 	printf("bind ok\n");	
 
@@ -69,10 +70,10 @@ int main(void){
 	socklen_t udpClilen = sizeof(their_addr);
 	printf("socklen fine\n");
 
-	while(1)
+	while(1){
 		printf("receiving UDP\n");
 	
-		if((n = recvfrom(sockUDP, (char *)&recvPacket, sizeof(long), 0, (struct sockaddr *)&their_addr, &udpClilen)) == -1){
+		if((n = recvfrom(sockUDP, (char *)&recvPacket, sizeof(long), 0, resUDP->ai_addr, &udpClilen)) == -1){
 					printf("error on recvFrom");
 		}
 		printf("rcvd: %ld\n",recvPacket);
@@ -80,7 +81,6 @@ int main(void){
 		printf("Here is the return message: %ld\n",retPacket);
 		n = sendto(sockUDP, (char *)&retPacket, sizeof(long), 0, (struct sockaddr *)&their_addr, udpClilen);
 		printf("sent: %ld\n",retPacket);
-		}
 	}//end while loop
 	//close(connectionFileDescriptor);
 	//close(socketFileDescriptor);
